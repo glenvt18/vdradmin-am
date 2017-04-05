@@ -89,6 +89,9 @@ use URI::Escape qw(uri_escape);
 use HTTP::Tiny;
 use IO::Select;
 
+use Benchmark;
+use Benchmark ':hireswallclock';
+
 my $can_use_encode = 1;
 $can_use_encode = undef unless (eval { require Encode });
 
@@ -653,6 +656,11 @@ my @Connections = ();
 
 $CONFIG{CACHE_LASTUPDATE} = 0;
 $CONFIG{CACHE_REC_LASTUPDATE} = 0;
+
+print "== UptoDate()      : ", Benchmark::timestr(Benchmark::timeit(1, "UptoDate();")), "\n"; 
+
+
+exit 0;
 
 while (true) {
 
@@ -3733,11 +3741,13 @@ sub UptoDate {
     if (((time() - $CONFIG{CACHE_LASTUPDATE}) >= ($CONFIG{CACHE_TIMEOUT} * 60)) || $force) {
         OpenSocket();
         Log(LOG_INFO, "[EPG] Building channel tree...");
-        ChanTree();
+        print "== ChanTree()      : ", Benchmark::timestr(Benchmark::timeit(1, "ChanTree();")), "\n"; 
+        #ChanTree();
         Log(LOG_INFO, "[EPG] Finished building channel tree.");
         if (@{$CHAN{$CHAN_FULL}->{channels}}) {
             Log(LOG_INFO, "[EPG] Building EPG tree...");
-            EPG_buildTree();
+            print "== EPG_buildTree() : ", Benchmark::timestr(Benchmark::timeit(1, "EPG_buildTree();")), "\n"; 
+            #EPG_buildTree();
             Log(LOG_INFO, "[EPG] Finished building EPG tree.");
             $CONFIG{CACHE_LASTUPDATE} = time();
 
