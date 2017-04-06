@@ -1460,10 +1460,10 @@ sub EPG_buildTree {
                         if ($FEATURES{VDRVERSION} < 10305) { # EPG is sorted by date since VDR 1.3.5
                             my ($last) = 0;
                             my (@temp);
-                            for (sort({ $a->{start} <=> $b->{start} } @events)) {
-                                next if ($last == $_->{start});
+                            for (sort({ $a->[EV_START] <=> $b->[EV_START] } @events)) {
+                                next if ($last == $_->[EV_START]);
                                 push(@temp, $_);
-                                $last = $_->{start};
+                                $last = $_->[EV_START];
                             }
                             $EPG{$vdr_id} = [@temp];
                         } else {
