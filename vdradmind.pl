@@ -5336,33 +5336,25 @@ sub rec_stream_folder {
 
 sub encode_RecTitle {
     my ($title, $use_vfat) = @_;
-    my ($c, $i, $newtitle);
 
     if ($use_vfat) {
         # VFAT on
-        for ($i = 0 ; $i < length($title) ; $i++) {
-            $c = substr($title, $i, 1);
-            unless ($c =~ /[öäüßÖÄÜA-Za-z0123456789_!@\$%&()+,.\-;=~ ]/) {
-                $newtitle .= sprintf("#%02X", ord($c));
-            } else {
-                $newtitle .= $c;
-            }
+        my $invalid_chars_re;
+        # see ExchangeChars() in vdr/recording.c
+        if ($FEATURES{VDRVERSION} >= 10504) {
+            $invalid_chars_re = qr{["\\/:*?|<>#]};
+        } else {
+            $invalid_chars_re = qr{[^öäüßÖÄÜA-Za-z0123456789!@\$%&()+,.\-;=~ ]};
         }
-    } else {
-        # VFAT off
-        for ($i = 0 ; $i < length($title) ; $i++) {
-            $c = substr($title, $i, 1);
-            if ($c eq "/") {
-                $newtitle .= "\x02";
-            } elsif ($c eq "\\") {
-                $newtitle .= "\x01";
-            } else {
-                $newtitle .= $c;
-            }
-        }
+        $title =~ s/$invalid_chars_re/sprintf("#%02X",ord($&))/eg;
+        # '.' at the end of a file/dir name
+        $title =~ s/\.$/sprintf("#%02X",ord($&))/eg;
+        $title =~ s/\.(?=~)/sprintf("#%02X",ord($&))/eg;
     }
 
-    return $newtitle;
+    $title =~ tr{~/ }{/~_};
+
+    return $title;
 }
 
 sub findVideoFiles {
@@ -5376,8 +5368,6 @@ sub findVideoFiles {
     ($hour, $minute) = ($1, $2) if ($time =~ /(\d\d):(\d\d)/);
     return () unless (defined($day) && defined($hour));
 
-    $title =~ s/ /_/g;
-    $title =~ s/~/\//g;
     $title = quotemeta $title;
 
     my $re_compiled = qr"$CONFIG{VIDEODIR}/$title\_*/(_/)?\d{2}$year-$month-$day\.$hour[.:]$minute\.\d+[-.]\d+\.rec/\d{3}(\.vdr|\d{2}\.ts)";
